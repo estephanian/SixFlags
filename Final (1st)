@@ -1,0 +1,307 @@
+//package robat;
+
+/*
+ * @author estephanian
+ * KNW 2300, First Year Design
+ * Becky the robot 
+ */
+import rxtxrobot.*;
+
+import java.util.Scanner; 
+ 
+public class Final{
+ 
+    public static RXTXRobot becky;
+    public static void main(String[] args){
+ 
+         
+        Scanner scan = new Scanner(System.in);
+         
+        becky = new ArduinoNano();
+        becky.setPort("/dev/tty.wch ch341 USB=>RS232 fa130"); //sets the port
+        becky.connect();
+             
+         
+        boolean beckFree = true;
+         
+        while(beckFree){
+        	
+//_______________________________________________________________________________
+        	
+            
+       	 int sum = 0;
+   		 int readingCount = 2;
+   		 double average;
+   		 double denom;
+   		 double stuff;
+   		 double tempCent;
+   		 
+   		 double myTemp = 0.0;
+   		 double mySalin = 0.0;
+   		 double myTurbid = 0.0;
+   		 double turbid = 0;
+   		 
+   		 
+//_______________________________________________________________________________       	
+        	
+        	
+        	
+          ////////////////////////////
+          //MOVE BECKY TO WATER WELL//
+          ////////////////////////////
+        	
+        	   becky.refreshDigitalPins();
+               
+               becky.refreshAnalogPins();
+                
+               boolean keepGoing = true;
+                
+               while(keepGoing){
+                   
+    
+                  becky.refreshAnalogPins();
+                  becky.refreshDigitalPins();
+                  AnalogPin bump = becky.getAnalogPin(1);
+                  DigitalPin ping = becky.getDigitalPin(4);
+
+                  
+                  if( bump.getValue() == 0){ // if the bump sensor gets 0 for a value (if it is pressed)
+                      keepGoing = false; //stop the loop
+                      becky.runMotor(RXTXRobot.MOTOR1, 0, RXTXRobot.MOTOR2, -0, 0); //stop the motor  
+                  }
+                       
+                  else if( bump.getValue() > 0){  //if the bump sensor gets any value larger than 0 (if it isn't pressed)
+               	   becky.runMotor(RXTXRobot.MOTOR1, 495, RXTXRobot.MOTOR2, -495, 0); //run the motor
+                          keepGoing = true; //keep the loop going
+                          
+                  } //end second "else if" loop
+               } //end while loop (keepGoing)
+        	
+//_______________________________________________________________________________  
+               
+               
+            //////////////////
+            /////DROP ARM/////   
+            //////////////////
+               
+             	
+           	becky.refreshDigitalPins();
+           	
+           	becky.attachServo(RXTXRobot.SERVO1, 9);
+           	becky.moveServo(RXTXRobot.SERVO1, 90);
+           	
+           	becky.sleep(8000);
+           
+//_______________________________________________________________________________         	
+           	
+           	///////////////////
+           	////TEST WATER///// 	
+           	////TEMPERATURE////
+           	/////////////////// 	
+           	
+           	
+           	
+       //Read the analog pin values ten times, adding to sum each time
+   		 for (int e = 1; e <= readingCount; e++){
+
+   		 //Refresh the analog pins so we get new readings
+   		 becky.refreshAnalogPins();
+   		 int reading = becky.getAnalogPin(0).getValue();
+ 
+   		sum += reading;
+   		average = sum / e;
+   		
+   		//Return the average reading
+		   		System.out.println("The probe read the value: " + average);
+		//		System.out.println("In volts: " + (average * (5.0/1023.0)));
+				stuff = Math.log((1013.0/((1023.0/average) - 1.0))/986.8);
+		   		denom = ((1.0/300.7) + (1.0/3723.0)*stuff);
+		   		tempCent = 1.0/denom - 273.0;
+		   		System.out.println("The temperature is " + tempCent);
+		   		
+		   		becky.sleep(1000);
+		   		
+   		 } //end of the for loop     	
+           	
+//_______________________________________________________________________________          	
+           	
+          //////////////////
+          ////TEST WATER//// 	
+          ////TURBIDITY/////
+          ////////////////// 	
+           	
+           	
+         becky.refreshAnalogPins();
+         becky.refreshDigitalPins();
+
+         AnalogPin turbVolt = becky.getAnalogPin(3); 
+         
+         
+         for(int i = 0; i < 2; i ++){
+    	        becky.refreshAnalogPins();
+    	        double v = turbVolt.getValue();
+    	    //  double turbidity = (-.5939*((double)v)) + 271.88;
+    	        double turbidity = (-1.6696*((double)v)) + 456.03;
+    	        System.out.println("Turbidity sensor has value " + turbidity);
+    	    //	System.out.println("v =" + v);
+    	        turbid = turbidity;
+    	        
+    	        
+
+    	    }//end for loop
+         
+//_______________________________________________________________________________        
+         
+         //////////////////
+         ////TEST WATER//// 	
+         /////SALINITY/////
+         //////////////////
+         
+         becky.refreshAnalogPins();
+
+	        AnalogPin conductivity = becky.getAnalogPin(4);
+	        AnalogPin voltage = becky.getAnalogPin(5); 
+	        
+	        
+	        for(int s = 0; s < 2; s++){
+	        	becky.refreshAnalogPins();
+
+	        	double salinity = (-.0132*((double)becky.getConductivity())) + 6.6866;
+	        	System.out.println("Salinity: " + salinity);
+	        	
+	        } //end for loop
+	        
+	        //change equation for salinity sensor
+	        
+        	
+//_______________________________________________________________________________	        
+	        
+	       //////////////////
+	       ////REMOVE ARM////
+	       //////////////////
+        	
+	        becky.attachServo(RXTXRobot.SERVO1, 9); //Connect the servos to the Arduino
+
+       	 
+	        int r = 90;
+	        for(int a = 0; a < 30; a++){
+
+        		becky.moveServo(RXTXRobot.SERVO1, r);
+        		r -= 3;
+        		becky.sleep(100);
+	        
+	        } //end for loop
+	        
+//_______________________________________________________________________________      
+	        
+	        //////////////////
+	        ////MOVE BACK/////
+	        //////////////////
+	        
+	        becky.runMotor(RXTXRobot.MOTOR1, -280, RXTXRobot.MOTOR2, 280, 2000);
+	        
+//_______________________________________________________________________________	        
+	        
+	      
+	      ///////////////////////////////
+	      ///GO TO PING PONG DISPENSER///
+	      ///////////////////////////////     
+	        
+	        
+	        becky.sleep(2000);
+        	
+        	becky.runMotor(RXTXRobot.MOTOR1, -240, RXTXRobot.MOTOR2, 120, 3000);
+        	
+        	becky.runMotor(RXTXRobot.MOTOR1, -240, RXTXRobot.MOTOR2, 240, 3500);
+	        
+//_______________________________________________________________________________	        
+	        
+        	
+        	/////////////////////////
+        	///HIT PING PONG BALLS///
+        	/////////////////////////
+        	
+        	
+        	
+//_______________________________________________________________________________   	
+        	
+        	///////////////////////////
+        	///FIND AND CROSS BRIDGE///
+        	///////////////////////////
+        	
+        	
+        	
+        	
+        	
+//_______________________________________________________________________________         	
+        	
+        	
+       
+        	///////////////////////////////
+        	///FIND REMEDIATION LOCATION///
+        	///////////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+      
+        	
+        	/////////////////////////////
+        	///DELIVER PING PONG BALLS///
+        	/////////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+        	
+        	
+        	
+        	/////////////////////////////
+        	///CROSS BRIDGE (PART TWO)///
+        	/////////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+        	
+        	
+        	////////////////////////
+        	///FIND TEETER TOTTER///
+        	////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+        	
+        	////////////////////////
+        	///TILT TEETER TOTTER///
+        	////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________  	
+        	
+        	
+        	
+        	
+        	
+        	
+        } //end while loop (beckFree)
+        
+    
+    }
+}
