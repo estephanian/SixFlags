@@ -1,0 +1,332 @@
+//package robat;
+
+/*
+ * @author estephanian
+ * KNW 2300, First Year Design
+ * Becky the robot 
+ */
+import rxtxrobot.*;
+
+import java.util.Scanner; 
+ 
+public class Final{
+ 
+    public static RXTXRobot becky;
+    public static void main(String[] args){
+ 
+         
+        Scanner scan = new Scanner(System.in);
+         
+        becky = new ArduinoNano();
+        becky.setPort("/dev/tty.wch ch341 USB=>RS232 fa130"); //sets the port
+        becky.connect(); //connects the arduino...brings becky to life
+             
+         
+        boolean beckFree = true;
+         
+        while(beckFree){
+        	
+//_______________________________________________________________________________
+       //////////////////
+       ////SET VALUES////
+       //////////////////     
+        	
+        
+       	 int sum = 0;
+   		 int readingCount = 2;
+   		 double average;
+   		 double denom;
+   		 double stuff;
+   		 double tempCent;
+   		 
+   		 double myTemp = 0.0;
+   		 double mySalin = 0.0;
+   		 double myTurbid = 0.0;
+   		 double turbid = 0;
+   		 
+   		 
+   	
+        
+   		becky.attachServo(RXTXRobot.SERVO3, 11); 
+//_______________________________________________________________________________       	
+        	
+        	
+        	
+        ////////////////////////////
+        //MOVE BECKY TO WATER WELL//
+        ////////////////////////////
+        	
+        	   becky.refreshDigitalPins(); //refreshes the digital pins
+               becky.refreshAnalogPins(); //refreshes the analog pins
+                
+               boolean keepGoing = true; //just a simple boolean to use for the while loop
+                
+               while(keepGoing){
+                   
+    
+                  becky.refreshAnalogPins(); //refreshes the analog pins
+                  becky.refreshDigitalPins(); //refreshes the digital pins
+                  AnalogPin bump = becky.getAnalogPin(1); //sets the pin for the bump sensor
+                  DigitalPin ping = becky.getDigitalPin(4); //sets the pin for the ping sensor
+
+                  
+                  if( bump.getValue() == 0){ // if the bump sensor gets 0 for a value (if it is pressed)
+                      keepGoing = false; //stop the loop
+                      becky.runMotor(RXTXRobot.MOTOR1, 0, RXTXRobot.MOTOR2, -0, 0); //stop the motor  
+                  }
+                       
+                  else if( bump.getValue() > 0){  //if the bump sensor gets any value larger than 0 (if it isn't pressed)
+               	   becky.runMotor(RXTXRobot.MOTOR1, 300, RXTXRobot.MOTOR2, -300, 0); //run the motor
+                          keepGoing = true; //keep the loop going
+                          
+                  } //end second "else if" loop
+                  
+               } //end while loop (keepGoing)
+        	
+//_______________________________________________________________________________  
+               
+               
+        //////////////////
+        /////DROP ARM/////   
+        //////////////////
+               
+             	
+           	becky.refreshDigitalPins();
+           	
+        	becky.attachServo(RXTXRobot.SERVO1, 9); //attaches the servo
+           	becky.moveServo(RXTXRobot.SERVO1, 140); //move the servo
+           	
+           	becky.sleep(3000); //pause for 8 seconds
+           
+//_______________________________________________________________________________         	
+           	
+       	///////////////////
+        ////TEST WATER///// 	
+       	////TEMPERATURE////
+       	/////////////////// 	
+           	
+           	
+           	
+       //Read the analog pin values ten times, adding to sum each time
+   		 for (int e = 1; e <= readingCount; e++){
+
+   		 //Refresh the analog pins so we get new readings
+   		 becky.refreshAnalogPins();
+   		 int reading = becky.getAnalogPin(0).getValue();
+ 
+   		sum += reading; //the sum is the reading added to itself
+   		average = sum / e; //the average of the sum and the amount of times the loop ran
+   		
+   		//Return the average reading
+		   		System.out.println("The probe read the value: " + average); //prints out the average
+		//		System.out.println("In volts: " + (average * (5.0/1023.0)));
+				stuff = Math.log((1013.0/((1023.0/average) - 1.0))/986.8); //prints out the temperature
+		   		denom = ((1.0/300.7) + (1.0/3723.0)*stuff); //just getting the value of the denomiator (made writing the equations easier)
+		   		tempCent = 1.0/denom - 273.0; //the value of the final temperature
+		   		System.out.println("The temperature is " + tempCent); //prints out the temperature
+		   		
+		   		becky.sleep(1000); //pauses becky for 1 second
+		   		
+   		 } //end of the for loop     	
+           	
+//_______________________________________________________________________________          	
+           	
+          //////////////////
+          ////TEST WATER//// 	
+          ////TURBIDITY/////
+          ////////////////// 	
+           	
+        
+   		 
+         becky.refreshAnalogPins();
+         becky.refreshDigitalPins();
+
+         AnalogPin turbVolt = becky.getAnalogPin(3); 
+         
+         
+         for(int i = 0; i < 2; i ++){
+    	        becky.refreshAnalogPins();
+    	        double v = turbVolt.getValue();
+    	    //  double turbidity = (-.5939*((double)v)) + 271.88;
+    	        double turbidity = (-1.6696*((double)v)) + 456.03;
+    	        System.out.println("Turbidity sensor has value " + turbidity);
+    	    //	System.out.println("v =" + v);
+    	        turbid = turbidity;
+    	        
+    	        
+
+    	    }//end for loop
+         
+//_______________________________________________________________________________        
+         
+         //////////////////
+         ////TEST WATER//// 	
+         /////SALINITY/////
+         //////////////////
+         
+         becky.refreshAnalogPins();
+
+	        AnalogPin conductivity = becky.getAnalogPin(4); //sets the conductivity pin
+	        AnalogPin voltage = becky.getAnalogPin(5);  //sets the voltage pin
+	        
+	        	
+	        	for(int s = 0; s < 1; s++){
+                    
+	                int ADC = becky.getConductivity(); //only need this method for AC signals
+	        //       System.out.println("The probe reads the value: " + ADC); // ADC code values
+	        //        System.out.println("In Volts: " + (ADC * (5.0/1023.0))); // Conversion of ADC to Volts
+	                
+	                double salinity = 0.0719*(ADC*ADC) - (82.559*ADC) + 24365; 
+	                //salinity equation relating measured ADC code value and conductivity 
+	                System.out.println("Salinity: " + salinity);
+	                
+	            }//end for loop
+	        	
+        	
+//_______________________________________________________________________________	        
+	        
+	     //////////////////
+	     ////REMOVE ARM////
+	     //////////////////
+       
+
+       	 
+	        int r = 90;
+	        for(int a = 0; a < 30; a++){
+
+        		becky.moveServo(RXTXRobot.SERVO1, r);
+        		r -= 3;
+        		becky.sleep(100);
+	        
+	        } //end for loop
+	        
+//_______________________________________________________________________________      
+	        
+	    //////////////////
+	    ////MOVE BACK/////
+	    //////////////////
+	        
+	        becky.runMotor(RXTXRobot.MOTOR1, -280, RXTXRobot.MOTOR2, 280, 600); //makes becky move backwards
+	        
+//_______________________________________________________________________________	        
+	        
+	      
+	      ///////////////////////////////
+	      ///GO TO PING PONG DISPENSER///
+	      ///////////////////////////////     
+	        
+	        
+	        becky.sleep(2000);
+        	
+        	becky.runMotor(RXTXRobot.MOTOR1, -270, RXTXRobot.MOTOR2, 120, 2380); //turns becky
+        	
+        	becky.runMotor(RXTXRobot.MOTOR1, -240, RXTXRobot.MOTOR2, 240, 3450); //runs becky backwards
+        	
+        	becky.sleep(3000);
+	        
+//_______________________________________________________________________________	        
+	        
+        	
+        	/////////////////////////
+        	///HIT PING PONG BALLS///
+        	/////////////////////////
+        	
+     //    	becky.attachServo(RXTXRobot.SERVO2, 10); //attaches the servo
+     //       becky.moveServo(RXTXRobot.SERVO2, 100); //moves the servo
+            
+            becky.sleep(2000);
+            
+            
+//_______________________________________________________________________________   	
+        	
+        	///////////////////////////
+        	///FIND AND CROSS BRIDGE///
+        	///////////////////////////
+        	
+       // 	becky.runMotor(RXTXRobot.MOTOR1, -240, RXTXRobot.MOTOR2, 240, 2000); //runs becky backwards
+        	
+       //  	becky.runMotor(RXTXRobot.MOTOR1, -240, RXTXRobot.MOTOR2, 120, 2800); //turns becky
+        	
+        	
+        	
+//_______________________________________________________________________________         	
+        	
+        	
+       
+        ///////////////////////////////
+      	///FIND REMEDIATION LOCATION///
+      	///////////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+      
+        	
+        /////////////////////////////
+        ///DELIVER PING PONG BALLS///
+        /////////////////////////////
+        	
+      //  	becky.refreshDigitalPins();
+           	
+     //      	becky.attachServo(RXTXRobot.SERVO1, 9); //attaches the servo
+     //      	becky.moveServo(RXTXRobot.SERVO1, 90); //moves the servo
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+        	
+        	
+        	
+        /////////////////////////////
+        ///CROSS BRIDGE (PART TWO)///
+        /////////////////////////////
+        	
+     //      	becky.runMotor(RXTXRobot.MOTOR1, -280, RXTXRobot.MOTOR2, 140, 4000); //turns becky around
+           	
+     //   	becky.runMotor(RXTXRobot.MOTOR1,280, RXTXRobot.MOTOR2, -280, 10000); //runs becky straight
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+        	
+        	
+        ////////////////////////
+        ///FIND TEETER TOTTER///
+        ////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________ 
+        	
+        	
+        ////////////////////////
+        ///TILT TEETER TOTTER///
+        ////////////////////////
+        	
+
+        	
+        	
+        	
+//_______________________________________________________________________________  	
+        	
+        	
+        	
+        	
+        	
+        	
+        } //end while loop (beckFree)
+        beckFree = false;
+    
+    }
+    
+
+}
